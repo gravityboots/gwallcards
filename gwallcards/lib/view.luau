@@ -71,9 +71,10 @@ return function(mode: string)
 
 	-- ── Actions ───────────────────────────────────────────────────────────────
 
-	local function apply(close)
+	-- `close` closes the panel afterwards; `onlyIfNew` (live preview) skips the file already applied.
+	local function apply(close, onlyIfNew)
 		local path = selectedPath()
-		if path and path ~= lastApplied then
+		if path and not (onlyIfNew and path == lastApplied) then
 			lastApplied = path
 			noctalia.state.set("apply", { path = path, n = noctalia.nowMs() })
 		end
@@ -227,8 +228,8 @@ return function(mode: string)
 		if math.abs(sel - pos) < 0.002 then
 			pos = sel
 			panel.setNeedsFrameTick(false)
-			if cfg("live_preview") and selectedPath() ~= lastApplied then
-				apply(false)
+			if cfg("live_preview") then
+				apply(false, true)
 			end
 		end
 		render()

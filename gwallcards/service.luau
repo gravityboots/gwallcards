@@ -130,51 +130,24 @@ local function socketFor(target)
 	return sockets .. "/" .. (target == "*" and "all" or target) .. ".sock"
 end
 
-local function send(target, command, cb)
-	local sh = "printf '%s\\n' " .. quote(command) .. " | socat -T 2 - UNIX-CONNECT:" .. quote(socketFor(target))
-	noctalia.runAsync(sh, function(r)
-		if cb then
-			cb(r.exitCode == 0 and string.sub(r.stdout, 1, 2) == "OK")
-		end
-	end, 3000)
+-- Every apply bumps `gen`; delayed steps of an older apply see the mismatch and do nothing.
+local gen = 0
+-- True while a gSlapper we started is on screen (Noctalia's own wallpaper surface is then off).
+local playing = false
+
+local function after(ms, fn)
+	noctalia.runAsync({ "sleep", tostring(ms / 1000) }, fn)
 end
 
--- Stops every gSlapper instance this plugin started, then calls `done` once they are gone.
-local function stopVideo(done)
-	local socks = noctalia.listDir(sockets) or {}
-	local pending = #socks
-	for _, conn in (targets()) do
-		noctalia.setWallpaperEnabled(conn, true)
-	end
-	if pending == 0 and done then
-		done()
-	end
-	for _, name in socks do
-		local sock = sockets .. "/" .. name
-		noctalia.runAsync("printf 'stop\\n' | socat -T 2 - UNIX-CONNECT:" .. quote(sock) .. "; rm -f " .. quote(sock), function()
-			pending -= 1
-			if pending == 0 and done then
-				done()
-			end
-		end)
-	end
+-- Noctalia's wallpaper transition length, so handovers happen once its fade has finished.
+local function transitionMs()
+	return (tonumber(noctalia.getSetting("wallpaper.transition_duration")) or 1500) + 150
 end
 
-local function launch(target, path)
-	local gst = noctalia.string.trim(cfg("scale") .. " no-audio" .. (cfg("loop") and " loop" or "") .. " " .. cfg("gst_options"))
-	local argv = { "gslapper", "--fork", "--no-save-state", "--ipc-socket", socketFor(target), "--fps-cap", cfg("fps_cap"), "--gst-options", gst }
-	if cfg("when_hidden") ~= "none" then
-		table.insert(argv, "--" .. cfg("when_hidden"))
+local function setSurfaces(conns, enabled)
+	for _, conn in conns do
+		noctalia.setWallpaperEnabled(conn, enabled)
 	end
-	table.insert(argv, target)
-	table.insert(argv, path)
-	noctalia.removeFile(socketFor(target)) -- stale socket from a crashed instance
-	noctalia.runAsync(argv, function(r)
-		if r.exitCode ~= 0 then
-			noctalia.notifyError("gwallcards", "gSlapper failed: " .. r.stderr)
-			stopVideo()
-		end
-	end)
 end
 
 local function setNoctaliaWallpaper(conns, path)
@@ -183,21 +156,102 @@ local function setNoctaliaWallpaper(conns, path)
 	end
 end
 
+-- Kills every gSlapper this plugin started (matched by our socket folder), however it was launched.
+local killArgv = { "pkill", "-f", "--", "gslapper .*--ipc-socket " .. sockets .. "/" }
+local function killVideo(done)
+	noctalia.runAsync(killArgv, function()
+		for _, name in noctalia.listDir(sockets) or {} do
+			noctalia.removeFile(sockets .. "/" .. name)
+		end
+		playing = false
+		if done then
+			done()
+		end
+	end)
+end
+
+local function send(target, command, cb)
+	local sh = "printf '%s\\n' " .. quote(command) .. " | socat -T 2 - UNIX-CONNECT:" .. quote(socketFor(target))
+	noctalia.runAsync(sh, function(r)
+		cb(r.exitCode == 0 and string.sub(r.stdout, 1, 2) == "OK")
+	end, 3000)
+end
+
+local function launch(targetsList, path)
+	local gst = noctalia.string.trim(cfg("scale") .. " no-audio" .. (cfg("loop") and " loop" or "") .. " " .. cfg("gst_options"))
+	for _, target in targetsList do
+		local argv = { "gslapper", "--fork", "--no-save-state", "--ipc-socket", socketFor(target), "--fps-cap", cfg("fps_cap"), "--gst-options", gst }
+		if cfg("when_hidden") ~= "none" then
+			table.insert(argv, "--" .. cfg("when_hidden"))
+		end
+		table.insert(argv, target)
+		table.insert(argv, path)
+		noctalia.runAsync(argv, function(r)
+			if r.exitCode ~= 0 then
+				noctalia.notifyError("gwallcards", "gSlapper failed: " .. r.stderr)
+			end
+		end)
+	end
+	playing = true
+end
+
+-- Back to Noctalia's own wallpaper: show its surface, then stop gSlapper (used by IPC "stop" and settings changes).
+local function stopVideo(done)
+	gen += 1
+	setSurfaces((targets()), true)
+	killVideo(done)
+end
+
+-- Image: set it while Noctalia's surface is still off, turn the surface back on so the image fades in
+-- over the video, and only stop gSlapper once that fade is done.
+local function applyImage(path)
+	local conns = targets()
+	local g = gen
+	setNoctaliaWallpaper(conns, path)
+	if not playing then
+		return
+	end
+	setSurfaces(conns, true)
+	after(transitionMs(), function()
+		if g == gen then
+			killVideo()
+		end
+	end)
+end
+
+-- Video / gif: its frame becomes the Noctalia wallpaper (colour scheme). If gSlapper is already running it
+-- just switches file; otherwise it starts, and Noctalia's surface is hidden once its fade to the frame is done.
 local function applyVideo(path, key)
 	local conns, gtargets = targets()
 	local frame = frames .. "/" .. key .. ".jpg"
+	local g = gen
 	local function play()
-		setNoctaliaWallpaper(conns, frame) -- drives the colour scheme; hidden under gSlapper
-		for _, t in gtargets do
-			send(t, "change " .. path, function(ok)
-				if not ok then
-					launch(t, path)
-				end
-			end)
+		if g ~= gen then
+			return
 		end
-		for _, conn in conns do
-			noctalia.setWallpaperEnabled(conn, false)
+		setNoctaliaWallpaper(conns, frame)
+		if playing then
+			local restarted = false
+			for _, t in gtargets do
+				send(t, "change " .. path, function(ok)
+					if not ok and not restarted and g == gen then
+						restarted = true
+						killVideo(function()
+							launch(gtargets, path)
+							setSurfaces(conns, false)
+						end)
+					end
+				end)
+			end
+			setSurfaces(conns, false)
+			return
 		end
+		launch(gtargets, path)
+		after(transitionMs(), function()
+			if g == gen then
+				setSurfaces(conns, false)
+			end
+		end)
 	end
 	if noctalia.fileExists(frame) then
 		play()
@@ -216,9 +270,9 @@ local function apply(path)
 	if not info then
 		return
 	end
+	gen += 1
 	if kind == "image" then
-		stopVideo()
-		setNoctaliaWallpaper((targets()), path)
+		applyImage(path)
 	else
 		applyVideo(path, media.hash(path .. ":" .. info.mtime))
 	end
@@ -272,12 +326,15 @@ end
 
 function onExit(_signal, reason)
 	if reason ~= "reload" then
-		stopVideo()
+		setSurfaces((targets()), true)
+		noctalia.runAsync(killArgv) -- no callback: it must outlive this runtime
 	end
 end
 
 scan()
 noctalia.state.set("current", current.path or noctalia.wallpaperPath(noctalia.focusedOutputName() or ""))
-if current.kind and current.kind ~= "image" then
-	apply(current.path) -- bring the video back after a restart
-end
+killVideo(function() -- clear any gSlapper left over from a crash, then bring the video back
+	if current.kind and current.kind ~= "image" then
+		apply(current.path)
+	end
+end)

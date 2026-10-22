@@ -20,7 +20,7 @@ Tested on Hyprland with Noctalia v5.
 
 ## Requirements
 
-- Noctalia v5 (plugin API 25 or newer)
+- Noctalia v5 (plugin API 26 or newer)
 - [`gslapper`](https://github.com/Nomadcxx/gSlapper) 1.5+ plays video and gif wallpapers
 - `ffmpeg` makes thumbnails, picks colours, and extracts video frames
 - `socat` sends commands to gSlapper
