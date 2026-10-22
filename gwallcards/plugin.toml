@@ -1,0 +1,322 @@
+id = "gravityboots/gwallcards" # keep in sync with PLUGIN in lib/media.luau
+name = "gwallcards"
+version = "0.1.0"
+plugin_api = 25
+author = "gravityboots"
+license = "MIT"
+icon = "cards"
+description = "A scrolling card deck for image, video and gif wallpapers, played through gSlapper."
+tags = ["panel", "service", "wallpaper", "video"]
+dependencies = ["gslapper", "ffmpeg", "socat"]
+
+# ── Panel size ──────────────────────────────────────────────────────────────
+# Noctalia reads panel sizes from the manifest only (plugins cannot resize a panel or
+# expose its size as a setting), so this is the one place to edit by hand.
+# Sizes larger than the screen are clamped to it. Cards stretch to fill whatever you set.
+# Keep the info height = deck height + 60 so cards stay the same size when you press `z`.
+
+[[panel]]
+id = "deck"
+entry = "deck.luau"
+width = 1500
+height = 420
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Left", "Right", "h", "l", "shift+h", "shift+l", "Home", "End", "Return", "space", "z"]
+
+[[panel]]
+id = "info"
+entry = "info.luau"
+width = 1500
+height = 480
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["Left", "Right", "h", "l", "shift+h", "shift+l", "Home", "End", "Return", "space", "z", "f"]
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+  [[widget.setting]]
+  key = "glyph"
+  type = "glyph"
+  label_key = "settings.glyph.label"
+  default = "cards"
+
+# ── Settings ────────────────────────────────────────────────────────────────
+# Noctalia's settings page has no section headers, so each group starts with a
+# `section_*` toggle that shows or hides the settings under it.
+
+# Deck ───────────────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_deck"
+type = "bool"
+label_key = "section.deck"
+default = true
+
+[[setting]]
+key = "default_view"
+type = "select"
+label_key = "settings.default_view.label"
+default = "deck"
+options = [
+  { value = "deck", label_key = "settings.default_view.deck" },
+  { value = "info", label_key = "settings.default_view.info" },
+]
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "cards_per_side"
+type = "int"
+label_key = "settings.cards_per_side.label"
+default = 3
+min = 0
+max = 10
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "wrap"
+type = "bool"
+label_key = "settings.wrap.label"
+default = true
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "animation_ms"
+type = "int"
+label_key = "settings.animation_ms.label"
+default = 220
+min = 1
+max = 2000
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "live_preview"
+type = "bool"
+label_key = "settings.live_preview.label"
+description_key = "settings.live_preview.description"
+default = false
+visible_when = { key = "section_deck", values = ["true"] }
+
+# Cards & preview ────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_cards"
+type = "bool"
+label_key = "section.cards"
+default = false
+
+[[setting]]
+key = "side_width_ratio"
+type = "double"
+label_key = "settings.side_width_ratio.label"
+description_key = "settings.side_width_ratio.description"
+default = 0.22
+min = 0.05
+max = 1.0
+step = 0.01
+visible_when = { key = "section_cards", values = ["true"] }
+
+[[setting]]
+key = "dim_per_card"
+type = "double"
+label_key = "settings.dim_per_card.label"
+description_key = "settings.dim_per_card.description"
+default = 0.18
+min = 0.0
+max = 0.5
+step = 0.01
+visible_when = { key = "section_cards", values = ["true"] }
+
+[[setting]]
+key = "card_gap"
+type = "int"
+label_key = "settings.card_gap.label"
+default = 8
+min = 0
+max = 64
+visible_when = { key = "section_cards", values = ["true"] }
+
+[[setting]]
+key = "card_radius"
+type = "int"
+label_key = "settings.card_radius.label"
+default = 12
+min = 0
+max = 64
+visible_when = { key = "section_cards", values = ["true"] }
+
+[[setting]]
+key = "info_name_width"
+type = "int"
+label_key = "settings.info_name_width.label"
+default = 320
+min = 80
+max = 1000
+visible_when = { key = "section_cards", values = ["true"] }
+
+[[setting]]
+key = "thumbnail_width"
+type = "int"
+label_key = "settings.thumbnail_width.label"
+description_key = "settings.thumbnail_width.description"
+default = 1280
+min = 160
+max = 3840
+visible_when = { key = "section_cards", values = ["true"] }
+
+# Video ──────────────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_video"
+type = "bool"
+label_key = "section.video"
+default = false
+
+[[setting]]
+key = "outputs"
+type = "string_list"
+label_key = "settings.outputs.label"
+description_key = "settings.outputs.description"
+default = []
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
+key = "scale"
+type = "select"
+label_key = "settings.scale.label"
+default = "fill"
+options = [
+  { value = "fill", label_key = "settings.scale.fill" },
+  { value = "stretch", label_key = "settings.scale.stretch" },
+  { value = "original", label_key = "settings.scale.original" },
+  { value = "panscan=1.0", label_key = "settings.scale.panscan" },
+]
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
+key = "fps_cap"
+type = "select"
+label_key = "settings.fps_cap.label"
+default = "60"
+options = [
+  { value = "30", label_key = "settings.fps_cap.30" },
+  { value = "60", label_key = "settings.fps_cap.60" },
+  { value = "100", label_key = "settings.fps_cap.100" },
+]
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
+key = "loop"
+type = "bool"
+label_key = "settings.loop.label"
+default = true
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
+key = "when_hidden"
+type = "select"
+label_key = "settings.when_hidden.label"
+default = "auto-pause"
+options = [
+  { value = "none", label_key = "settings.when_hidden.none" },
+  { value = "auto-pause", label_key = "settings.when_hidden.pause" },
+  { value = "auto-stop", label_key = "settings.when_hidden.stop" },
+]
+visible_when = { key = "section_video", values = ["true"] }
+
+# Colour groups ──────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_colors"
+type = "bool"
+label_key = "section.colors"
+default = false
+
+[[setting]]
+key = "color_groups"
+type = "string_map"
+label_key = "settings.color_groups.label"
+description_key = "settings.color_groups.description"
+default = { red = "345-15", orange = "15-45", yellow = "45-70", green = "70-160", cyan = "160-200", blue = "200-255", purple = "255-300", pink = "300-345" }
+visible_when = { key = "section_colors", values = ["true"] }
+
+[[setting]]
+key = "color_min_saturation"
+type = "double"
+label_key = "settings.color_min_saturation.label"
+description_key = "settings.color_min_saturation.description"
+default = 0.25
+min = 0.0
+max = 1.0
+step = 0.01
+visible_when = { key = "section_colors", values = ["true"] }
+
+# Files ──────────────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_files"
+type = "bool"
+label_key = "section.files"
+default = false
+
+[[setting]]
+key = "folders"
+type = "string_list"
+label_key = "settings.folders.label"
+description_key = "settings.folders.description"
+default = []
+visible_when = { key = "section_files", values = ["true"] }
+
+[[setting]]
+key = "image_extensions"
+type = "string_list"
+label_key = "settings.image_extensions.label"
+default = ["jpg", "jpeg", "png", "webp", "bmp"]
+visible_when = { key = "section_files", values = ["true"] }
+
+[[setting]]
+key = "video_extensions"
+type = "string_list"
+label_key = "settings.video_extensions.label"
+default = ["mp4", "mkv", "webm", "mov", "avi"]
+visible_when = { key = "section_files", values = ["true"] }
+
+[[setting]]
+key = "gif_extensions"
+type = "string_list"
+label_key = "settings.gif_extensions.label"
+default = ["gif"]
+visible_when = { key = "section_files", values = ["true"] }
+
+[[setting]]
+key = "thumbnail_jobs"
+type = "int"
+label_key = "settings.thumbnail_jobs.label"
+default = 4
+min = 1
+max = 16
+visible_when = { key = "section_files", values = ["true"] }
+
+# Extra gSlapper options ─────────────────────────────────────────────────────
+
+[[setting]]
+key = "section_gslapper"
+type = "bool"
+label_key = "section.gslapper"
+default = false
+
+[[setting]]
+key = "gst_options"
+type = "string"
+label_key = "settings.gst_options.label"
+description_key = "settings.gst_options.description"
+default = ""
+visible_when = { key = "section_gslapper", values = ["true"] }
