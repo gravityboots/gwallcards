@@ -31,8 +31,6 @@
   "settings.info_name_width.label": "Info bar file name width (px)",
   "settings.live_preview.label": "Live preview",
   "settings.live_preview.description": "Apply the centre card whenever the deck stops moving.",
-  "settings.outputs.label": "Outputs",
-  "settings.outputs.description": "Connector names to apply to (e.g. eDP-1). Empty applies to all.",
   "settings.scale.label": "Video scaling",
   "settings.scale.fill": "Fill",
   "settings.scale.stretch": "Stretch",
@@ -55,5 +53,11 @@
   "kind.image": "IMAGE",
   "kind.video": "VIDEO",
   "kind.gif": "GIF",
-  "settings.wrap.label": "Loop around at the ends"
+  "settings.wrap.label": "Loop around at the ends",
+  "settings.output.label": "Output",
+  "settings.output.description": "Connector to use (e.g. eDP-1). Empty uses all outputs.",
+  "settings.video_layer.label": "Video layer",
+  "settings.video_layer.description": "Use 'Bottom' only if videos never appear (stay behind Noctalia's wallpaper). Bottom can cover desktop widgets.",
+  "settings.video_layer.background": "Background",
+  "settings.video_layer.bottom": "Bottom"
 }

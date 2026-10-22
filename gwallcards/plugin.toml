@@ -1,6 +1,6 @@
 id = "gravityboots/gwallcards" # keep in sync with PLUGIN in lib/media.luau
 name = "gwallcards"
-version = "0.1.1"
+version = "0.2.0"
 plugin_api = 26
 author = "gravityboots"
 license = "MIT"
@@ -181,11 +181,23 @@ label_key = "section.video"
 default = false
 
 [[setting]]
-key = "outputs"
-type = "string_list"
-label_key = "settings.outputs.label"
-description_key = "settings.outputs.description"
-default = []
+key = "output"
+type = "string"
+label_key = "settings.output.label"
+description_key = "settings.output.description"
+default = ""
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
+key = "video_layer"
+type = "select"
+label_key = "settings.video_layer.label"
+description_key = "settings.video_layer.description"
+default = "background"
+options = [
+  { value = "background", label_key = "settings.video_layer.background" },
+  { value = "bottom", label_key = "settings.video_layer.bottom" },
+]
 visible_when = { key = "section_video", values = ["true"] }
 
 [[setting]]

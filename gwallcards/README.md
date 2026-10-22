@@ -91,7 +91,7 @@ starts with a toggle that expands it:
 | --- | --- |
 | Deck | first view, cards per side, loop around, slide speed, live preview |
 | Cards & preview | side card width, dimming, gap, corner radius, info bar name width, thumbnail size |
-| Video playback | which outputs to use, scaling, FPS cap, loop, pause/stop when covered |
+| Video playback | output (empty = all), video layer, scaling, FPS cap, loop, pause/stop when covered |
 | Colour groups | hue ranges for each colour and the cut-off for "mono" |
 | Files & thumbnails | folders (empty = Noctalia's wallpaper folder), extensions per type, thumbnail jobs |
 | Extra gSlapper options | anything else to pass to gSlapper's `-o` |
@@ -109,9 +109,44 @@ noctalia msg plugin gravityboots/gwallcards:service all toggle            # open
 noctalia msg plugin gravityboots/gwallcards:service all apply /path/to/file
 noctalia msg plugin gravityboots/gwallcards:service all stop              # stop gSlapper, back to Noctalia's wallpaper
 noctalia msg plugin gravityboots/gwallcards:service all rescan
+noctalia msg plugin gravityboots/gwallcards:service all status            # write what's running to the log
 ```
 
-## How it works
+## How switching works
+
+Noctalia's own wallpaper stays on the whole time, and there is only ever one gSlapper.
+
+| From → to | What happens |
+| --- | --- |
+| image → image | Noctalia switches with its normal transition. |
+| image → video | Noctalia transitions to a frame of the video, then gSlapper starts on top showing the same picture. |
+| video → video | The running gSlapper switches file. |
+| video → image | gSlapper is stopped, which reveals that frame, then Noctalia transitions to the image. |
+
+The frame also drives your colour scheme, so colours follow videos as well.
+
+## Troubleshooting
+
+Every switch is logged, step by step, with timings and each command's result:
+
+```sh
+tail -f ~/.local/state/noctalia/plugins/data/gravityboots/gwallcards/gwallcards.log
+```
+
+Keep that open, switch wallpapers, and the log shows what happened at each step. For a snapshot of
+what is running right now (gSlapper processes, gSlapper's own status, Noctalia's wallpaper per
+output), run:
+
+```sh
+noctalia msg plugin gravityboots/gwallcards:service all status
+```
+
+- **Video never appears** (you only see its still frame): your compositor stacks Noctalia's wallpaper
+  above gSlapper. Set *Video playback → Video layer* to **Bottom**.
+- **More than one `gslapper` in the status output**: something else started one (another plugin or an
+  autostart). gwallcards only stops the ones it started.
+
+## Files
 
 ```
 gwallcards/
