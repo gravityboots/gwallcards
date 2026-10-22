@@ -1,6 +1,6 @@
 id = "gravityboots/gwallcards" # keep in sync with PLUGIN in lib/media.luau
 name = "gwallcards"
-version = "0.2.1"
+version = "0.2.2"
 plugin_api = 25
 author = "gravityboots"
 license = "MIT"
@@ -23,7 +23,7 @@ height = 420
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Left", "Right", "h", "l", "shift+h", "shift+l", "Home", "End", "Return", "space", "z"]
+capture_keys = ["Left", "Right", "Up", "Down", "h", "l", "j", "k", "shift+h", "shift+l", "shift+j", "shift+k", "Home", "End", "Return", "space", "z"]
 
 [[panel]]
 id = "info"
@@ -33,7 +33,7 @@ height = 480
 placement = "floating"
 position = "center"
 keyboard_focus = "exclusive"
-capture_keys = ["Left", "Right", "h", "l", "shift+h", "shift+l", "Home", "End", "Return", "space", "z", "f"]
+capture_keys = ["Left", "Right", "Up", "Down", "h", "l", "j", "k", "shift+h", "shift+l", "shift+j", "shift+k", "Home", "End", "Return", "space", "z", "f"]
 
 [[service]]
 id = "service"
@@ -95,6 +95,25 @@ label_key = "settings.animation_ms.label"
 default = 220
 min = 1
 max = 2000
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "repeat_delay_ms"
+type = "int"
+label_key = "settings.repeat_delay_ms.label"
+description_key = "settings.repeat_delay_ms.description"
+default = 250
+min = 0
+max = 2000
+visible_when = { key = "section_deck", values = ["true"] }
+
+[[setting]]
+key = "repeat_rate"
+type = "int"
+label_key = "settings.repeat_rate.label"
+default = 20
+min = 1
+max = 60
 visible_when = { key = "section_deck", values = ["true"] }
 
 [[setting]]

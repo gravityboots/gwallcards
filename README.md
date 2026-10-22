@@ -70,8 +70,8 @@ bind = SUPER SHIFT, W, exec, noctalia msg panel-toggle gravityboots/gwallcards:i
 
 | Key | Action |
 | --- | --- |
-| `←` `→` / `h` `l` | Previous / next |
-| `Shift+h` `Shift+l` | Jump by the number of side cards |
+| `←` `→` `↑` `↓` / `h` `l` `k` `j` | Previous / next (hold to scroll fast) |
+| `Shift+h/k` `Shift+l/j` | Jump by the number of side cards |
 | `Home` `End` | First / last wallpaper |
 | `Enter` | Apply and close |
 | `Space` | Apply and keep browsing |

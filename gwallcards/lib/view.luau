@@ -193,13 +193,20 @@ return function(mode: string)
 
 	-- ── Host callbacks ────────────────────────────────────────────────────────
 
+	local function jump(dir)
+		return function() move(dir * cfg("cards_per_side")) end
+	end
+	local back, fwd = function() move(-1) end, function() move(1) end
+
+	-- Keys that keep scrolling while held (Noctalia sends one press + one release, no repeats).
+	local scrollKeys = {
+		Left = back, h = back, Up = back, k = back,
+		Right = fwd, l = fwd, Down = fwd, j = fwd,
+		["shift+h"] = jump(-1), ["shift+k"] = jump(-1),
+		["shift+l"] = jump(1), ["shift+j"] = jump(1),
+	}
+
 	local keys = {
-		Left = function() move(-1) end,
-		h = function() move(-1) end,
-		Right = function() move(1) end,
-		l = function() move(1) end,
-		["shift+h"] = function() move(-cfg("cards_per_side")) end,
-		["shift+l"] = function() move(cfg("cards_per_side")) end,
 		Home = function() move(1 - ((sel - 1) % math.max(1, #shown) + 1)) end,
 		End = function() move(#shown - ((sel - 1) % math.max(1, #shown) + 1)) end,
 		Return = function() apply(true) end,
@@ -213,19 +220,32 @@ return function(mode: string)
 		end,
 	}
 
+	local held = nil -- { action, nextAt } while a scroll key is down
+
 	local host = {}
 
 	function host.onKey(chord, pressed)
-		local action = pressed and keys[chord]
-		if action then
-			action()
+		if not pressed then
+			held = nil -- any release stops the repeat (a chord's release may arrive without its modifier)
+			return
+		end
+		local scroll = scrollKeys[chord]
+		if scroll then
+			scroll()
+			held = { action = scroll, nextAt = noctalia.nowMs() + cfg("repeat_delay_ms") }
+		elseif keys[chord] then
+			keys[chord]()
 		end
 	end
 
 	function host.onFrameTick(deltaMs)
 		local dt = tonumber(deltaMs) or 16
+		if held and noctalia.nowMs() >= held.nextAt then
+			held.action()
+			held.nextAt = noctalia.nowMs() + 1000 / math.max(1, cfg("repeat_rate"))
+		end
 		pos += (sel - pos) * (1 - math.exp(-dt * 4 / math.max(1, cfg("animation_ms")))) -- ~settled after animation_ms
-		if math.abs(sel - pos) < 0.002 then
+		if not held and math.abs(sel - pos) < 0.002 then
 			pos = sel
 			panel.setNeedsFrameTick(false)
 			if cfg("live_preview") then
@@ -239,6 +259,7 @@ return function(mode: string)
 		noctalia.state.set("view", mode) -- the bar widget reopens whichever view you used last
 		noctalia.state.set("rescan", noctalia.nowMs())
 		searchRev = 0
+		held = nil -- a key held while the panel closed never sends its release
 		refilter(false)
 		render()
 	end
