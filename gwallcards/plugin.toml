@@ -1,7 +1,7 @@
 id = "gravityboots/gwallcards" # keep in sync with PLUGIN in lib/media.luau
 name = "gwallcards"
-version = "0.2.0"
-plugin_api = 26
+version = "0.2.1"
+plugin_api = 25
 author = "gravityboots"
 license = "MIT"
 icon = "cards"
@@ -189,6 +189,16 @@ default = ""
 visible_when = { key = "section_video", values = ["true"] }
 
 [[setting]]
+key = "video_start_delay"
+type = "int"
+label_key = "settings.video_start_delay.label"
+description_key = "settings.video_start_delay.description"
+default = 0
+min = 0
+max = 5000
+visible_when = { key = "section_video", values = ["true"] }
+
+[[setting]]
 key = "video_layer"
 type = "select"
 label_key = "settings.video_layer.label"
@@ -236,7 +246,8 @@ visible_when = { key = "section_video", values = ["true"] }
 key = "when_hidden"
 type = "select"
 label_key = "settings.when_hidden.label"
-default = "auto-pause"
+description_key = "settings.when_hidden.description"
+default = "none"
 options = [
   { value = "none", label_key = "settings.when_hidden.none" },
   { value = "auto-pause", label_key = "settings.when_hidden.pause" },

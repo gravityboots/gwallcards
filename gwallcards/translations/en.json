@@ -59,5 +59,8 @@
   "settings.video_layer.label": "Video layer",
   "settings.video_layer.description": "Use 'Bottom' only if videos never appear (stay behind Noctalia's wallpaper). Bottom can cover desktop widgets.",
   "settings.video_layer.background": "Background",
-  "settings.video_layer.bottom": "Bottom"
+  "settings.video_layer.bottom": "Bottom",
+  "settings.video_start_delay.label": "Video start delay (ms)",
+  "settings.video_start_delay.description": "When switching from an image, wait this long before the video appears so Noctalia's transition to its frame can finish. 0 starts it straight away.",
+  "settings.when_hidden.description": "gSlapper's own detection of being covered by windows. Set back to 'Keep playing' if videos stop on their own."
 }

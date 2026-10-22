@@ -170,10 +170,6 @@ local function setNoctaliaWallpaper(path)
 	end
 end
 
--- Noctalia's transition length, so a video only appears once Noctalia has finished fading to its frame.
-local function transitionMs()
-	return (tonumber(noctalia.getSetting("wallpaper.transition_duration")) or 1500) + 100
-end
 
 local function killVideo(done)
 	trace("stop gSlapper")
@@ -189,15 +185,20 @@ end
 local function launchVideo(path)
 	local gst = noctalia.string.trim(cfg("scale") .. " no-audio" .. (cfg("loop") and " loop" or "") .. " " .. cfg("gst_options"))
 	local target = cfg("output") ~= "" and cfg("output") or "*" -- gSlapper takes one output or '*' (all)
-	local argv = { "gslapper", "--fork", "--no-save-state", "--ipc-socket", socket, "--layer", cfg("video_layer"), "--fps-cap", cfg("fps_cap"), "--gst-options", gst }
+	local argv = { "gslapper", "--no-save-state", "--ipc-socket", socket, "--layer", cfg("video_layer"), "--fps-cap", cfg("fps_cap"), "--gst-options", gst }
 	if cfg("when_hidden") ~= "none" then
 		table.insert(argv, "--" .. cfg("when_hidden"))
 	end
 	table.insert(argv, target)
 	table.insert(argv, path)
-	trace("start gSlapper on " .. target)
+	trace("start gSlapper on " .. target .. ": " .. table.concat(argv, " "))
 	playing = true
-	run(argv)
+	-- Detached (own session, no output capture): a captured command is killed when it outlives its timeout,
+	-- which is what made videos stop a few seconds after starting.
+	noctalia.runAsync(argv)
+	run({ "sleep", "2" }, function() -- then confirm it is alive and playing
+		run("printf 'query\\n' | socat -T 2 - UNIX-CONNECT:" .. quote(socket))
+	end)
 end
 
 -- Asks the running gSlapper to switch file; restarts it if it does not answer OK.
@@ -229,8 +230,13 @@ local function applyVideo(path, frame)
 		changeVideo(path)
 		return
 	end
-	trace(string.format("waiting %d ms for Noctalia's transition", transitionMs()))
-	run({ "sleep", tostring(transitionMs() / 1000) }, function()
+	local delay = cfg("video_start_delay")
+	if delay <= 0 then
+		launchVideo(path)
+		return
+	end
+	trace(string.format("waiting %d ms before starting the video", delay))
+	run({ "sleep", tostring(delay / 1000) }, function()
 		if g == gen then
 			launchVideo(path)
 		else

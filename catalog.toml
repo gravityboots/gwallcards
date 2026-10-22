@@ -2,12 +2,12 @@
 [[plugin]]
 id           = "gravityboots/gwallcards"
 name         = "gwallcards"
-version      = "0.2.0"
+version      = "0.2.1"
 author       = "gravityboots"
 license      = "MIT"
 icon         = "cards"
 description  = "A scrolling card deck for image, video and gif wallpapers, played through gSlapper."
 deprecated   = false
-plugin_api   = 26
+plugin_api   = 25
 tags         = ["panel", "service", "wallpaper", "video"]
 dependencies = ["gslapper", "ffmpeg", "socat"]

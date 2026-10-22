@@ -20,7 +20,7 @@ Tested on Hyprland with Noctalia v5.
 
 ## Requirements
 
-- Noctalia v5 (plugin API 26 or newer)
+- Noctalia v5 (plugin API 25 or newer)
 - [`gslapper`](https://github.com/Nomadcxx/gSlapper) 1.5+ plays video and gif wallpapers
 - `ffmpeg` makes thumbnails, picks colours, and extracts video frames
 - `socat` sends commands to gSlapper
@@ -91,7 +91,7 @@ starts with a toggle that expands it:
 | --- | --- |
 | Deck | first view, cards per side, loop around, slide speed, live preview |
 | Cards & preview | side card width, dimming, gap, corner radius, info bar name width, thumbnail size |
-| Video playback | output (empty = all), video layer, scaling, FPS cap, loop, pause/stop when covered |
+| Video playback | output (empty = all), start delay, video layer, scaling, FPS cap, loop, pause/stop when covered |
 | Colour groups | hue ranges for each colour and the cut-off for "mono" |
 | Files & thumbnails | folders (empty = Noctalia's wallpaper folder), extensions per type, thumbnail jobs |
 | Extra gSlapper options | anything else to pass to gSlapper's `-o` |
@@ -119,7 +119,7 @@ Noctalia's own wallpaper stays on the whole time, and there is only ever one gSl
 | From → to | What happens |
 | --- | --- |
 | image → image | Noctalia switches with its normal transition. |
-| image → video | Noctalia transitions to a frame of the video, then gSlapper starts on top showing the same picture. |
+| image → video | Noctalia transitions to a frame of the video and gSlapper starts on top straight away (or after *Video start delay*). |
 | video → video | The running gSlapper switches file. |
 | video → image | gSlapper is stopped, which reveals that frame, then Noctalia transitions to the image. |
 
